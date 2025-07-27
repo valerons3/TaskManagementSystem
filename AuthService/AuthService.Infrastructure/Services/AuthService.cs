@@ -3,15 +3,26 @@ using System.Text;
 using AuthService.Application.Contracts.Auth;
 using AuthService.Application.Interfaces;
 using AuthService.Domain.Entities;
+using AuthService.Persistence.DbContexts;
+using Microsoft.EntityFrameworkCore;
 
 namespace AuthService.Infrastructure.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly List<User> users = new List<User>();
-    
-    public Task<AuthResponse> RegisterAsync(RegisterRequest request)
+    private readonly AuthDbContext dbContext;
+
+    public AuthService(AuthDbContext dbContext)
     {
+        this.dbContext = dbContext;
+    }
+    
+    public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+    {
+        var exists = await dbContext.Users.AnyAsync(u => u.Email == request.Email);
+        if (exists)
+            throw new ApplicationException($"User with email {request.Email} already exists");
+        
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -21,24 +32,24 @@ public class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow
         };
         
-        users.Add(user);
+        await dbContext.Users.AddAsync(user);
+        await dbContext.SaveChangesAsync();
         
         var token = $"fake-jwt-token-for-{user.Username}";
-        
-        return Task.FromResult(new AuthResponse(user.Id, user.Username, user.Email, token));
+        return new AuthResponse(user.Id, user.Username, user.Email, token);
     }
 
-    public Task<AuthResponse> LoginAsync(LoginRequest request)
+    public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        User? user = users.FirstOrDefault(u =>
-        u.Email == request.Email &&
+        User? user = await dbContext.Users.FirstOrDefaultAsync(u =>
+            u.Email == request.Email && 
             u.PasswordHash == HashPassword(request.Password));
         if (user is null)
             throw new UnauthorizedAccessException("Invalid credentials");
         
         var token = $"fake-jwt-token-for-{user.Username}";
 
-        return Task.FromResult(new AuthResponse(user.Id, user.Username, user.Email, token));
+        return new AuthResponse(user.Id, user.Username, user.Email, token);
     }
     
     private static string HashPassword(string password)
