@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using AuthService.Application.Contracts.Auth;
+using AuthService.Application.Exceptions;
 using AuthService.Application.Interfaces;
 using AuthService.Domain.Entities;
 using AuthService.Persistence.DbContexts;
@@ -23,7 +24,7 @@ public class AuthService : IAuthService
     {
         var exists = await dbContext.Users.AnyAsync(u => u.Email == request.Email);
         if (exists)
-            throw new ApplicationException($"User with email {request.Email} already exists");
+            throw new UserAlreadyExistsException(request.Email);
         
         var user = new User
         {
@@ -47,7 +48,7 @@ public class AuthService : IAuthService
             u.Email == request.Email && 
             u.PasswordHash == HashPassword(request.Password));
         if (user is null)
-            throw new UnauthorizedAccessException("Invalid credentials");
+            throw new InvalidCredentialsException();
         
         var token = tokenGenerator.GenerateToken(user);
 
