@@ -11,10 +11,12 @@ namespace AuthService.Infrastructure.Services;
 public class AuthService : IAuthService
 {
     private readonly AuthDbContext dbContext;
+    private readonly IJwtTokenGenerator tokenGenerator;
 
-    public AuthService(AuthDbContext dbContext)
+    public AuthService(AuthDbContext dbContext, IJwtTokenGenerator tokenGenerator)
     {
         this.dbContext = dbContext;
+        this.tokenGenerator = tokenGenerator;
     }
     
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -35,7 +37,7 @@ public class AuthService : IAuthService
         await dbContext.Users.AddAsync(user);
         await dbContext.SaveChangesAsync();
         
-        var token = $"fake-jwt-token-for-{user.Username}";
+        var token = tokenGenerator.GenerateToken(user);
         return new AuthResponse(user.Id, user.Username, user.Email, token);
     }
 
@@ -47,7 +49,7 @@ public class AuthService : IAuthService
         if (user is null)
             throw new UnauthorizedAccessException("Invalid credentials");
         
-        var token = $"fake-jwt-token-for-{user.Username}";
+        var token = tokenGenerator.GenerateToken(user);
 
         return new AuthResponse(user.Id, user.Username, user.Email, token);
     }
