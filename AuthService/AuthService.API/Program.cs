@@ -1,6 +1,9 @@
+using AuthService.Application.Interfaces;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddScoped<IAuthService, AuthService.Infrastructure.Services.AuthService>();
 
 var app = builder.Build();
 
