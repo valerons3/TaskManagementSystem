@@ -13,11 +13,13 @@ public class AuthService : IAuthService
 {
     private readonly AuthDbContext dbContext;
     private readonly IJwtTokenGenerator tokenGenerator;
+    private readonly IPasswordHasher passwordHasher;
 
-    public AuthService(AuthDbContext dbContext, IJwtTokenGenerator tokenGenerator)
+    public AuthService(AuthDbContext dbContext, IJwtTokenGenerator tokenGenerator, IPasswordHasher passwordHasher)
     {
         this.dbContext = dbContext;
         this.tokenGenerator = tokenGenerator;
+        this.passwordHasher = passwordHasher;
     }
     
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -31,7 +33,7 @@ public class AuthService : IAuthService
             Id = Guid.NewGuid(),
             Username = request.Username,
             Email = request.Email,
-            PasswordHash = HashPassword(request.Password),
+            PasswordHash = passwordHasher.Hash(request.Password),
             CreatedAt = DateTime.UtcNow
         };
         
@@ -44,22 +46,12 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        User? user = await dbContext.Users.FirstOrDefaultAsync(u =>
-            u.Email == request.Email && 
-            u.PasswordHash == HashPassword(request.Password));
-        if (user is null)
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        if (user is null || !passwordHasher.Verify(request.Password, user.PasswordHash))
             throw new InvalidCredentialsException();
         
         var token = tokenGenerator.GenerateToken(user);
 
         return new AuthResponse(user.Id, user.Username, user.Email, token);
-    }
-    
-    private static string HashPassword(string password)
-    {
-        using var sha256 = SHA256.Create();
-        var bytes = Encoding.UTF8.GetBytes(password);
-        var hash = sha256.ComputeHash(bytes);
-        return Convert.ToBase64String(hash);
     }
 }
