@@ -6,11 +6,20 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using AuthService.API.Middleware;
+using AuthService.Application.Validators;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
-builder.Services.AddControllers();
+
+// Controllers and Validation
+builder.Services.AddControllers().AddFluentValidation(c =>
+{
+    c.RegisterValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+});
+
 builder.Services.AddEndpointsApiExplorer();
 
 
@@ -43,7 +52,6 @@ builder.Services.AddAuthentication(options =>
             ClockSkew = TimeSpan.Zero
         };
     });
-
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();

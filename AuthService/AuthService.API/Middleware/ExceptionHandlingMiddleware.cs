@@ -1,4 +1,5 @@
 ﻿using AuthService.Application.Exceptions;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuthService.API.Middleware;
