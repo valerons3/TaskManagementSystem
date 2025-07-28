@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using TaskService.Application.Interfaces;
 using TaskService.Application.Validators;
@@ -8,18 +9,22 @@ using TaskService.Persistence.DbContexts;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using TaskService.API.Middleware;
+using TaskService.Application.Contracts.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 
-builder.Services.AddControllers().AddFluentValidation(c =>
-{
-    c.RegisterValidatorsFromAssemblyContaining<CreateJobRequestValidator>();
-}).AddJsonOptions(options =>
+
+builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+
+// Validation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateJobRequestValidator>();
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -65,6 +70,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseHttpsRedirection();
