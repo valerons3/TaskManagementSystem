@@ -99,4 +99,39 @@ public class JobService : IJobService
             job.CreatedAt
         );
     }
+
+    public async Task<bool> UpdateJobAsync(Guid id, UpdateJobRequest request)
+    {
+        Job? job = await dbContext.Jobs.FirstOrDefaultAsync(j => j.Id == id && !j.IsDeleted);
+        if (job is null)
+            return false;
+
+        job.Title = request.Title;
+        job.Description = request.Description;
+        job.Status = request.Status;
+
+        await dbContext.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteJobAsync(Guid id)
+    {
+        Job job = await dbContext.Jobs.FirstOrDefaultAsync(j => j.Id == id && !j.IsDeleted);
+        if (job is null) return false;
+        
+        job.IsDeleted = true;
+        await dbContext.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> AssignJobAsync(Guid jobId, Guid assigneeId)
+    {
+        var job = await dbContext.Jobs.FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
+        if (job is null)
+            return false;
+
+        job.AssigneeId = assigneeId;
+        await dbContext.SaveChangesAsync();
+        return true;
+    }
 }

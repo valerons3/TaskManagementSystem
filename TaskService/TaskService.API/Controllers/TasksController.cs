@@ -51,4 +51,28 @@ public class TasksController : ControllerBase
         var job = await jobService.GetJobByIdAsync(id);
         return job is not null ? Ok(job) : NotFound();
     }
+    
+    [HttpPut("{id}")]
+    [Authorize]
+    public async Task<IActionResult> UpdateJob(Guid id, [FromBody] UpdateJobRequest request)
+    {
+        var success = await jobService.UpdateJobAsync(id, request);
+        return success ? NoContent() : NotFound();
+    }
+
+    [HttpDelete("{id}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteJob(Guid id)
+    {
+        var success = await jobService.DeleteJobAsync(id);
+        return success ? NoContent() : NotFound();
+    }
+
+    [HttpPut("{id}/assign")]
+    [Authorize]
+    public async Task<IActionResult> AssignJob(Guid id, [FromBody] AssignJobRequest request)
+    {
+        var success = await jobService.AssignJobAsync(id, request.AssigneeId);
+        return success ? NoContent() : NotFound();
+    }
 }

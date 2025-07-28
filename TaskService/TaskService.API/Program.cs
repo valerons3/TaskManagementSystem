@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using TaskService.Application.Interfaces;
 using TaskService.Application.Validators;
@@ -15,7 +16,11 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers().AddFluentValidation(c =>
 {
     c.RegisterValidatorsFromAssemblyContaining<CreateJobRequestValidator>();
+}).AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+
 builder.Services.AddEndpointsApiExplorer();
 
 // Database
