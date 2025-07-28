@@ -12,8 +12,8 @@ using TaskService.Persistence.DbContexts;
 namespace TaskService.Persistence.Migrations
 {
     [DbContext(typeof(JobDbContext))]
-    [Migration("20250728004928_InitJobSchema")]
-    partial class InitJobSchema
+    [Migration("20250728151541_AddJobHistory")]
+    partial class AddJobHistory
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -61,6 +61,31 @@ namespace TaskService.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Jobs");
+                });
+
+            modelBuilder.Entity("TaskService.Domain.Entities.JobHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PerformedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("JobHistories");
                 });
 #pragma warning restore 612, 618
         }

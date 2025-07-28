@@ -24,7 +24,7 @@ builder.Services.AddControllers().AddFluentValidation(c =>
 builder.Services.AddEndpointsApiExplorer();
 
 // Database
-builder.Services.AddDbContext<TaskDbContext>(options =>
+builder.Services.AddDbContext<JobDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // JWT
@@ -55,6 +55,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IJobService, JobService>();
+builder.Services.AddScoped<IJobHistoryService, JobHistoryService>();
 
 
 var app = builder.Build();

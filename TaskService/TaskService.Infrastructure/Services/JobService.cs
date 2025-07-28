@@ -9,11 +9,13 @@ namespace TaskService.Infrastructure.Services;
 
 public class JobService : IJobService
 {
-    private readonly TaskDbContext dbContext;
+    private readonly JobDbContext dbContext;
+    private readonly IJobHistoryService jobHistoryService;
 
-    public JobService(TaskDbContext dbContext)
+    public JobService(JobDbContext dbContext, IJobHistoryService jobHistoryService)
     {
         this.dbContext = dbContext;
+        this.jobHistoryService = jobHistoryService;
     }
     
     public async Task<JobResponse> CreateJobAsync(CreateJobRequest request, Guid creatorId)
@@ -30,7 +32,8 @@ public class JobService : IJobService
 
         await dbContext.Jobs.AddAsync(job);
         await dbContext.SaveChangesAsync();
-
+        await jobHistoryService.LogHistoryAsync(job.Id, "Job created", null);
+        
         return new JobResponse(
             job.Id,
             job.Title,
@@ -111,6 +114,7 @@ public class JobService : IJobService
         job.Status = request.Status;
 
         await dbContext.SaveChangesAsync();
+        await jobHistoryService.LogHistoryAsync(job.Id, "Job updated", null);
         return true;
     }
 
@@ -121,6 +125,7 @@ public class JobService : IJobService
         
         job.IsDeleted = true;
         await dbContext.SaveChangesAsync();
+        await jobHistoryService.LogHistoryAsync(job.Id, "Job deleted", null);
         return true;
     }
 
@@ -132,6 +137,7 @@ public class JobService : IJobService
 
         job.AssigneeId = assigneeId;
         await dbContext.SaveChangesAsync();
+        await jobHistoryService.LogHistoryAsync(job.Id, $"Assigned to user {assigneeId}", null);
         return true;
     }
 }
