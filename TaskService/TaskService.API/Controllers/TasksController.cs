@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskService.Application.Contracts.Jobs;
 using TaskService.Application.Interfaces;
+using TaskService.Domain.Enums;
 
 namespace TaskService.API.Controllers;
 
@@ -29,6 +30,20 @@ public class TasksController : ControllerBase
         var job = await jobService.CreateJobAsync(request, Guid.Parse(userId));
         return CreatedAtAction(nameof(GetJobById), new { id = job.Id }, job);
     }
+    
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> GetJobs(
+        [FromQuery] string? search,
+        [FromQuery] JobStatus? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var request = new GetJobsRequest(search, status, page, pageSize);
+        var result = await jobService.GetJobsAsync(request);
+        return Ok(result);
+    }
+    
     
     [HttpGet("{id}")]
     public IActionResult GetJobById(Guid id)
