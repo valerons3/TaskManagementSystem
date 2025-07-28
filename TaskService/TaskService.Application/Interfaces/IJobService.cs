@@ -5,4 +5,5 @@ namespace TaskService.Application.Interfaces;
 public interface IJobService
 {
     Task<JobResponse> CreateJobAsync(CreateJobRequest request, Guid creatorId);
+    Task<PagedResult<JobResponse>> GetJobsAsync(GetJobsRequest request);
 }

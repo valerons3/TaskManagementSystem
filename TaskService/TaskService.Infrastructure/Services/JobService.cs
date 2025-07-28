@@ -1,4 +1,5 @@
-﻿using TaskService.Application.Contracts.Jobs;
+﻿using Microsoft.EntityFrameworkCore;
+using TaskService.Application.Contracts.Jobs;
 using TaskService.Application.Interfaces;
 using TaskService.Domain.Entities;
 using TaskService.Domain.Enums;
@@ -39,5 +40,44 @@ public class JobService : IJobService
             job.AssigneeId,
             job.CreatedAt
         );
+    }
+
+    public async Task<PagedResult<JobResponse>> GetJobsAsync(GetJobsRequest request)
+    {
+        var query = dbContext.Jobs
+            .AsNoTracking()
+            .Where(j => !j.IsDeleted);
+        
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            query = query.Where(j =>
+                j.Title.ToLower().Contains(request.Search.ToLower()) ||
+                (j.Description != null && j.Description.ToLower().Contains(request.Search.ToLower())));
+        }
+
+        if (request.Status.HasValue)
+        {
+            query = query.Where(j => j.Status == request.Status.Value);
+        }
+        
+        int totalCount = await query.CountAsync();
+
+        var jobs = await query
+            .OrderByDescending(j => j.CreatedAt)
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync();
+
+        var items = jobs.Select(job => new JobResponse(
+            job.Id,
+            job.Title,
+            job.Description,
+            job.Status,
+            job.CreatorId,
+            job.AssigneeId,
+            job.CreatedAt
+        )).ToList();
+
+        return new PagedResult<JobResponse>(totalCount, items);
     }
 }
