@@ -46,8 +46,9 @@ public class TasksController : ControllerBase
     
     
     [HttpGet("{id}")]
-    public IActionResult GetJobById(Guid id)
+    public async Task<IActionResult> GetJobById(Guid id)
     {
-        return Ok(); 
+        var job = await jobService.GetJobByIdAsync(id);
+        return job is not null ? Ok(job) : NotFound();
     }
 }

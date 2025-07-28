@@ -80,4 +80,23 @@ public class JobService : IJobService
 
         return new PagedResult<JobResponse>(totalCount, items);
     }
+
+    public async Task<JobResponse?> GetJobByIdAsync(Guid id)
+    {
+        Job? job = await dbContext.Jobs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(j => j.Id == id && !j.IsDeleted);
+        
+        if (job is null) return null;
+
+        return new JobResponse(
+            job.Id,
+            job.Title,
+            job.Description,
+            job.Status,
+            job.CreatorId,
+            job.AssigneeId,
+            job.CreatedAt
+        );
+    }
 }
