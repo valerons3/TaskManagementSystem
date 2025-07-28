@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\TaskService.Application\TaskService.Application.csproj" />
     <ProjectReference Include="..\TaskService.Domain\TaskService.Domain.csproj" />
+    <ProjectReference Include="..\TaskService.Persistence\TaskService.Persistence.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
