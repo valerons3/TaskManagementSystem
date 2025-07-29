@@ -10,7 +10,6 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using TaskService.API.Middleware;
-using TaskService.Application.Contracts.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);
 

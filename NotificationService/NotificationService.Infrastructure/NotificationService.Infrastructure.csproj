@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NotificationService.Application\NotificationService.Application.csproj" />
+    <ProjectReference Include="..\NotificationService.Persistence\NotificationService.Persistence.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

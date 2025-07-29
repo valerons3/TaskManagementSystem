@@ -53,7 +53,7 @@ public class TasksController : ControllerBase
     }
     
     [HttpPut("{id}")]
-    //[Authorize]
+    [Authorize]
     public async Task<IActionResult> UpdateJob(Guid id, [FromBody] UpdateJobRequest request)
     {
         await jobService.UpdateJobAsync(id, request);

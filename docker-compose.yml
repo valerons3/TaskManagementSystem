@@ -26,7 +26,21 @@ services:
       - "5433:5432"
     volumes:
       - task_postgres_data:/var/lib/postgresql/data
+      
+  notification-postgres:
+    container_name: notification-postgres
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5434:5432"
+    volumes:
+      - notification_postgres_data:/var/lib/postgresql/data
 
 volumes:
   auth_postgres_data:
   task_postgres_data:
+  notification_postgres_data:
