@@ -21,23 +21,10 @@ public class ExceptionHandlingMiddleware
         {
             await next(context);
         }
-        catch (ValidationException ex)
+        catch (ForbiddenAccessException ex)
         {
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
-
-            var errors = ex.Errors
-                .GroupBy(e => e.PropertyName)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(e => e.ErrorMessage).ToArray()
-                );
-
-            await context.Response.WriteAsJsonAsync(new
-            {
-                code = 400,
-                message = "Validation failed",
-                errors
-            });
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { error = ex.Message });
         }
         catch (JobNotFoundException ex)
         {

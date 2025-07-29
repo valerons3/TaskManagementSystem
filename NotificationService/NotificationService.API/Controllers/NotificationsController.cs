@@ -16,11 +16,23 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateNotification([FromBody] NotificationRequest request)
+    public async Task<IActionResult> Create([FromBody] NotificationRequest request)
     {
         await service.CreateNotificationAsync(request);
-        return Created();
+        return StatusCode(201); // Created
     }
-    
-    
+
+    [HttpGet("{userId:guid}")]
+    public async Task<IActionResult> GetByUserId(Guid userId)
+    {
+        var notifications = await service.GetNotificationsByUserIdAsync(userId);
+        return Ok(notifications);
+    }
+
+    [HttpPut("{id:guid}/mark-as-read")]
+    public async Task<IActionResult> MarkAsRead(Guid id)
+    {
+        await service.MarkAsReadAsync(id);
+        return NoContent();
+    }
 }

@@ -46,11 +46,12 @@ public class JobService : IJobService
         );
     }
 
-    public async Task<PagedResult<JobResponse>> GetJobsAsync(GetJobsRequest request)
+    public async Task<PagedResult<JobResponse>> GetJobsAsync(GetJobsRequest request, Guid userId)
     {
         var query = dbContext.Jobs
             .AsNoTracking()
-            .Where(j => !j.IsDeleted);
+            .Where(j => !j.IsDeleted && (j.CreatorId == userId || j.AssigneeId == userId));
+
         
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
@@ -85,14 +86,17 @@ public class JobService : IJobService
         return new PagedResult<JobResponse>(totalCount, items);
     }
 
-    public async Task<JobResponse> GetJobByIdAsync(Guid id)
+    public async Task<JobResponse> GetJobByIdAsync(Guid jobId, Guid userId)
     {
         Job? job = await dbContext.Jobs
             .AsNoTracking()
-            .FirstOrDefaultAsync(j => j.Id == id && !j.IsDeleted);
+            .FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
+
+        if (job.CreatorId != userId && job.AssigneeId != userId)
+            throw new ForbiddenAccessException();
         
         if (job is null)
-            throw new JobNotFoundException(id);
+            throw new JobNotFoundException(jobId);
 
         return new JobResponse(
             job.Id,
@@ -105,15 +109,14 @@ public class JobService : IJobService
         );
     }
 
-    public async Task UpdateJobAsync(Guid id, UpdateJobRequest request)
+    public async Task UpdateJobAsync(Guid jobId, Guid userId, UpdateJobRequest request)
     {
-        Job? job = await dbContext.Jobs.FirstOrDefaultAsync(j => j.Id == id && !j.IsDeleted);
+        Job? job = await dbContext.Jobs.FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
         if (job is null)
-            throw new JobNotFoundException(id);
-
-        if (job is null)
-            throw new JobNotFoundException(id);
-
+            throw new JobNotFoundException(jobId);
+        if (job.CreatorId != userId && job.AssigneeId != userId)
+            throw new ForbiddenAccessException();
+        
         job.Title = request.Title;
 
         if (request.Description is not null)
@@ -125,22 +128,29 @@ public class JobService : IJobService
         await jobHistoryService.LogHistoryAsync(job.Id, "Job updated", null);
     }
 
-    public async Task DeleteJobAsync(Guid id)
+    public async Task DeleteJobAsync(Guid jobId, Guid userId)
     {
-        Job? job = await dbContext.Jobs.FirstOrDefaultAsync(j => j.Id == id && !j.IsDeleted);
+        Job? job = await dbContext.Jobs.FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
+        
         if (job is null) 
-            throw new JobNotFoundException(id);
+            throw new JobNotFoundException(jobId);
+        
+        if (job.CreatorId != userId)
+            throw new ForbiddenAccessException();
         
         job.IsDeleted = true;
         await dbContext.SaveChangesAsync();
         await jobHistoryService.LogHistoryAsync(job.Id, "Job deleted", null);
     }
 
-    public async Task AssignJobAsync(Guid jobId, Guid assigneeId)
+    public async Task AssignJobAsync(Guid jobId, Guid assigneeId, Guid userId)
     {
         Job? job = await dbContext.Jobs.FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
         if (job is null)
             throw new JobNotFoundException(jobId);
+        
+        if (job.CreatorId != userId)
+            throw new ForbiddenAccessException();
 
         job.AssigneeId = assigneeId;
         await dbContext.SaveChangesAsync();

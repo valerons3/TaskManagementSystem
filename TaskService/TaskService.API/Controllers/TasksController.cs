@@ -39,8 +39,14 @@ public class TasksController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null)
+            return Unauthorized();
+        
+        Guid guidUserId = Guid.Parse(userId);
+        
         var request = new GetJobsRequest(search, status, page, pageSize);
-        var result = await jobService.GetJobsAsync(request);
+        var result = await jobService.GetJobsAsync(request, guidUserId);
         return Ok(result);
     }
     
@@ -48,7 +54,12 @@ public class TasksController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetJobById(Guid id)
     {
-        var job = await jobService.GetJobByIdAsync(id);
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null)
+            return Unauthorized(); 
+        Guid guidUserId = Guid.Parse(userId);
+        
+        var job = await jobService.GetJobByIdAsync(id, guidUserId);
         return Ok(job);
     }
     
@@ -56,7 +67,13 @@ public class TasksController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateJob(Guid id, [FromBody] UpdateJobRequest request)
     {
-        await jobService.UpdateJobAsync(id, request);
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null)
+            return Unauthorized();
+        
+        Guid guidUserId = Guid.Parse(userId);
+        
+        await jobService.UpdateJobAsync(id, guidUserId, request);
         return NoContent();
     }
 
@@ -64,7 +81,13 @@ public class TasksController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteJob(Guid id)
     {
-        await jobService.DeleteJobAsync(id);
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null)
+            return Unauthorized();
+        
+        Guid guidUserId = Guid.Parse(userId);
+        
+        await jobService.DeleteJobAsync(id, guidUserId);
         return NoContent();
     }
 
@@ -72,7 +95,13 @@ public class TasksController : ControllerBase
     [Authorize]
     public async Task<IActionResult> AssignJob(Guid id, [FromBody] AssignJobRequest request)
     {
-        await jobService.AssignJobAsync(id, request.AssigneeId);
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null)
+            return Unauthorized();
+        
+        Guid guidUserId = Guid.Parse(userId);
+        
+        await jobService.AssignJobAsync(id, request.AssigneeId, guidUserId);
         return NoContent();
     }
 }
