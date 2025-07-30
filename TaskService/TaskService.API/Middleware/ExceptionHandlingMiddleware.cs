@@ -31,6 +31,12 @@ public class ExceptionHandlingMiddleware
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             await context.Response.WriteAsJsonAsync(new { error = ex.Message });
         }
+        catch (NotificationSendException ex)
+        {
+            logger.LogError(ex, "Notification sending failed at {Path}. Exception: {Message}", context.Request.Path, ex.Message);
+            context.Response.StatusCode = StatusCodes.Status502BadGateway;
+            await context.Response.WriteAsJsonAsync(new { error = "Notification service unavailable" });
+        }
         catch (DbUpdateException ex)
         {
             logger.LogError(ex, "Database update failed at {Path}. Exception: {Message}", context.Request.Path, ex.Message);

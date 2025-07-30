@@ -11,7 +11,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using TaskService.API.Middleware;
-
+using TaskService.Application.Interfaces.Repositories;
+using TaskService.Persistence.Repositories;
 
 
 // Serilog
@@ -71,10 +72,15 @@ builder.Services.AddAuthentication(options =>
 // Serilog
 builder.Host.UseSerilog();
 
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(TaskService.Application.Mappings.MappingProfile).Assembly);
+
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IJobService, JobService>();
-builder.Services.AddScoped<IJobHistoryService, JobHistoryService>();
+builder.Services.AddScoped<IJobHistoryLogger, JobHistoryLogger>();
+builder.Services.AddScoped<IJobRepository, JobRepository>();
+builder.Services.AddScoped<IJobHistoryRepository, JobHistoryRepository>();
 builder.Services.AddHttpClient<INotificationClient, NotificationClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["NotificationService:BaseUrl"]);

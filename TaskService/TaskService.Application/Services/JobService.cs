@@ -1,26 +1,28 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
 using TaskService.Application.Contracts.Jobs;
 using TaskService.Application.Contracts.Notifications;
 using TaskService.Application.Exceptions;
 using TaskService.Application.Interfaces;
+using TaskService.Application.Interfaces.Repositories;
 using TaskService.Domain.Entities;
 using TaskService.Domain.Enums;
-using TaskService.Persistence.DbContexts;
 
 namespace TaskService.Infrastructure.Services;
 
 public class JobService : IJobService
 {
-    private readonly JobDbContext dbContext;
-    private readonly IJobHistoryService jobHistoryService;
+    private readonly IJobRepository jobRepository;
+    private readonly IJobHistoryLogger jobHistoryLogger;
     private readonly INotificationClient notificationClient;
+    private readonly IMapper mapper;
 
-    public JobService(JobDbContext dbContext, IJobHistoryService jobHistoryService,
-        INotificationClient notificationClient)
+    public JobService(IJobRepository jobRepository, IJobHistoryLogger jobHistoryLogger,
+        INotificationClient notificationClient, IMapper mapper)
     {
-        this.dbContext = dbContext;
-        this.jobHistoryService = jobHistoryService;
+        this.jobRepository = jobRepository;
+        this.jobHistoryLogger = jobHistoryLogger;
         this.notificationClient = notificationClient;
+        this.mapper = mapper;
     }
     
     public async Task<JobResponse> CreateJobAsync(CreateJobRequest request, Guid creatorId)
@@ -34,67 +36,35 @@ public class JobService : IJobService
             Status = JobStatus.Todo,
             CreatedAt = DateTime.UtcNow,
         };
-
-        await dbContext.Jobs.AddAsync(job);
-        await dbContext.SaveChangesAsync();
-        await jobHistoryService.LogHistoryAsync(job.Id, "Job created", null);
         
-        return new JobResponse(
-            job.Id,
-            job.Title,
-            job.Description,
-            job.Status,
-            job.CreatorId,
-            job.AssigneeId,
-            job.CreatedAt
-        );
+        await jobRepository.AddAsync(job);
+        await jobRepository.SaveChangesAsync();
+        await jobHistoryLogger.LogHistoryAsync(job.Id, "Job created", null);
+
+        return mapper.Map<JobResponse>(job);
     }
 
     public async Task<PagedResult<JobResponse>> GetJobsAsync(GetJobsRequest request, Guid userId)
     {
-        var query = dbContext.Jobs
-            .AsNoTracking()
-            .Where(j => !j.IsDeleted && (j.CreatorId == userId || j.AssigneeId == userId));
+        int skip = (request.Page - 1) * request.PageSize;
 
-        
-        if (!string.IsNullOrWhiteSpace(request.Search))
-        {
-            query = query.Where(j =>
-                j.Title.ToLower().Contains(request.Search.ToLower()) ||
-                (j.Description != null && j.Description.ToLower().Contains(request.Search.ToLower())));
-        }
+        var jobs = await jobRepository.GetUserJobsAsync(
+            userId,
+            request.Search,
+            request.Status,
+            skip,
+            request.PageSize);
 
-        if (request.Status.HasValue)
-        {
-            query = query.Where(j => j.Status == request.Status.Value);
-        }
-        
-        int totalCount = await query.CountAsync();
+        int totalCount = await jobRepository.GetUserJobsCountAsync(userId, request.Search, request.Status);
 
-        var jobs = await query
-            .OrderByDescending(j => j.CreatedAt)
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToListAsync();
-
-        var items = jobs.Select(job => new JobResponse(
-            job.Id,
-            job.Title,
-            job.Description,
-            job.Status,
-            job.CreatorId,
-            job.AssigneeId,
-            job.CreatedAt
-        )).ToList();
+        var items = mapper.Map<List<JobResponse>>(jobs);
 
         return new PagedResult<JobResponse>(totalCount, items);
     }
 
     public async Task<JobResponse> GetJobByIdAsync(Guid jobId, Guid userId)
     {
-        Job? job = await dbContext.Jobs
-            .AsNoTracking()
-            .FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
+        Job? job = await jobRepository.GetByIdAsync(jobId);
 
         if (job.CreatorId != userId && job.AssigneeId != userId)
             throw new ForbiddenAccessException();
@@ -102,20 +72,12 @@ public class JobService : IJobService
         if (job is null)
             throw new JobNotFoundException(jobId);
 
-        return new JobResponse(
-            job.Id,
-            job.Title,
-            job.Description,
-            job.Status,
-            job.CreatorId,
-            job.AssigneeId,
-            job.CreatedAt
-        );
+        return mapper.Map<JobResponse>(job);
     }
 
     public async Task UpdateJobAsync(Guid jobId, Guid userId, UpdateJobRequest request)
     {
-        Job? job = await dbContext.Jobs.FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
+        Job? job = await jobRepository.GetByIdAsync(jobId);
         if (job is null)
             throw new JobNotFoundException(jobId);
         if (job.CreatorId != userId && job.AssigneeId != userId)
@@ -128,8 +90,8 @@ public class JobService : IJobService
         if (request.Status is not null)
             job.Status = request.Status.Value;
 
-        await dbContext.SaveChangesAsync();
-        await jobHistoryService.LogHistoryAsync(job.Id, "Job updated", null);
+        await jobRepository.SaveChangesAsync();
+        await jobHistoryLogger.LogHistoryAsync(job.Id, "Job updated", null);
         if (job.AssigneeId is Guid assigneeId)
         {
             await notificationClient.SendNotificationAsync(new NotificationRequest(
@@ -141,7 +103,7 @@ public class JobService : IJobService
 
     public async Task DeleteJobAsync(Guid jobId, Guid userId)
     {
-        Job? job = await dbContext.Jobs.FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
+        Job? job = await jobRepository.GetByIdAsync(jobId);
         
         if (job is null) 
             throw new JobNotFoundException(jobId);
@@ -151,8 +113,8 @@ public class JobService : IJobService
         
         job.IsDeleted = true;
         
-        await dbContext.SaveChangesAsync();
-        await jobHistoryService.LogHistoryAsync(job.Id, "Job deleted", null);
+        await jobRepository.SaveChangesAsync();
+        await jobHistoryLogger.LogHistoryAsync(job.Id, "Job deleted", null);
         
         if (job.AssigneeId is Guid assigneeId)
         {
@@ -165,7 +127,7 @@ public class JobService : IJobService
 
     public async Task AssignJobAsync(Guid jobId, Guid assigneeId, Guid userId)
     {
-        Job? job = await dbContext.Jobs.FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
+        Job? job = await jobRepository.GetByIdAsync(jobId);
         if (job is null)
             throw new JobNotFoundException(jobId);
         
@@ -173,10 +135,13 @@ public class JobService : IJobService
             throw new ForbiddenAccessException();
 
         job.AssigneeId = assigneeId;
-        await dbContext.SaveChangesAsync();
-        await jobHistoryService.LogHistoryAsync(job.Id, $"Assigned to user {assigneeId}", null);
+        
+        await jobRepository.SaveChangesAsync();
+        await jobHistoryLogger.LogHistoryAsync(job.Id, $"Assigned to user {assigneeId}", null);
         await notificationClient.SendNotificationAsync(new NotificationRequest(assigneeId,
             "Новая задача",
             $"Вам назначена новая задача: \"{job.Title}\""));
     }
+    
 }
+

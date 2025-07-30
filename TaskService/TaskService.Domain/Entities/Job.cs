@@ -4,7 +4,7 @@ namespace TaskService.Domain.Entities;
 
 public class Job
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid CreatorId { get; set; }
     public Guid? AssigneeId { get; set; }
     public string Title { get; set; } = default!;

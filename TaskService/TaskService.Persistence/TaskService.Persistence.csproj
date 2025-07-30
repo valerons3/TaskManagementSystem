@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\TaskService.Application\TaskService.Application.csproj" />
     <ProjectReference Include="..\TaskService.Domain\TaskService.Domain.csproj" />
   </ItemGroup>
 
