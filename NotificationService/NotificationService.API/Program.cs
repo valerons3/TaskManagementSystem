@@ -5,8 +5,10 @@ using Microsoft.IdentityModel.Tokens;
 using NotificationService.API.Hubs;
 using NotificationService.API.Middleware;
 using NotificationService.Application.Interfaces;
+using NotificationService.Application.Interfaces.Repositories;
 using NotificationService.Infrastructure.Services;
 using NotificationService.Persistence.DbContexts;
+using NotificationService.Persistence.Repositories;
 using Serilog;
 
 // Serilog
@@ -55,11 +57,13 @@ builder.Services.AddAuthentication(options =>
         {
             OnMessageReceived = context =>
             {
-                var headerToken = context.Request.Headers["Authorization"];
-                
-                if (!string.IsNullOrEmpty(headerToken))
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/notifications-hub")) 
                 {
-                    context.Token = headerToken.ToString().Replace("Bearer ", "");
+                    context.Token = accessToken;
                 }
 
                 return Task.CompletedTask;
@@ -76,6 +80,7 @@ builder.Services.AddDbContext<NotificationDbContext>(options =>
 
 builder.Services.AddScoped<INotificationService, NotificationService.Infrastructure.Services.NotificationService>();
 builder.Services.AddScoped<INotificationHubClient, NotificationHubClient>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
 builder.Services.AddCors(options =>
 {

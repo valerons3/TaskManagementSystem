@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskService.Infrastructure"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskService.Persistence", "TaskService.Persistence\TaskService.Persistence.csproj", "{B7A0F974-6EFD-4006-BD9B-1768C22E47A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskService.Tests", "TaskService.Tests\TaskService.Tests.csproj", "{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{B7A0F974-6EFD-4006-BD9B-1768C22E47A1}.Release|x64.Build.0 = Release|Any CPU
 		{B7A0F974-6EFD-4006-BD9B-1768C22E47A1}.Release|x86.ActiveCfg = Release|Any CPU
 		{B7A0F974-6EFD-4006-BD9B-1768C22E47A1}.Release|x86.Build.0 = Release|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Debug|x64.Build.0 = Debug|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Debug|x86.Build.0 = Debug|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Release|x64.ActiveCfg = Release|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Release|x64.Build.0 = Release|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Release|x86.ActiveCfg = Release|Any CPU
+		{B3F8BA75-CAF0-486F-A5A9-C2ABA73EB04D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

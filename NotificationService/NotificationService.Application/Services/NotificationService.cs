@@ -1,20 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
-using NotificationService.Application.Contracts;
+﻿using NotificationService.Application.Contracts;
 using NotificationService.Application.Exceptions;
 using NotificationService.Application.Interfaces;
+using NotificationService.Application.Interfaces.Repositories;
 using NotificationService.Domain.Entities;
-using NotificationService.Persistence.DbContexts;
 
 namespace NotificationService.Infrastructure.Services;
 
 public class NotificationService : INotificationService
 {
-    private readonly NotificationDbContext dbContext;
+    private readonly INotificationRepository repository;
     private readonly INotificationHubClient hubClient;
 
-    public NotificationService(NotificationDbContext dbContext, INotificationHubClient hubClient)
+    public NotificationService(INotificationRepository repository, INotificationHubClient hubClient)
     {
-        this.dbContext = dbContext;
+        this.repository = repository;
         this.hubClient = hubClient;
     }
     
@@ -30,33 +29,31 @@ public class NotificationService : INotificationService
             CreatedAt = DateTime.UtcNow
         };
         
-        await dbContext.Notifications.AddAsync(notification);
-        await dbContext.SaveChangesAsync();
+        await repository.AddAsync(notification);
+        await repository.SaveChangesAsync();
         await hubClient.SendNotificationAsync(request);
     }
 
     public async Task<IEnumerable<NotificationResponse>> GetNotificationsByUserIdAsync(Guid userId)
     {
-        return await dbContext.Notifications
-            .Where(n => n.UserId == userId)
-            .OrderByDescending(n => n.CreatedAt)
-            .Select(n => new NotificationResponse(
-                n.Id,
-                n.Title,
-                n.Message,
-                n.IsRead,
-                n.CreatedAt
-            ))
-            .ToListAsync();
+        var entities = await repository.GetByUserIdAsync(userId);
+    
+        return entities.Select(n => new NotificationResponse(
+            n.Id,
+            n.Title,
+            n.Message,
+            n.IsRead,
+            n.CreatedAt
+        ));
     }
 
     public async Task MarkAsReadAsync(Guid id)
     {
-        Notification? notification = await dbContext.Notifications.FindAsync(id);
+        Notification? notification = await repository.GetByIdAsync(id);
         if (notification is null)
             throw new NotFoundException($"Notification with id: {id} not found");
 
         notification.IsRead = true;
-        await dbContext.SaveChangesAsync();
+        await repository.SaveChangesAsync();
     }
 }

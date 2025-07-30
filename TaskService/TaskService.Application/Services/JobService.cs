@@ -66,11 +66,11 @@ public class JobService : IJobService
     {
         Job? job = await jobRepository.GetByIdAsync(jobId);
 
+        if (job is null)
+            throw new JobNotFoundException(jobId);
         if (job.CreatorId != userId && job.AssigneeId != userId)
             throw new ForbiddenAccessException();
         
-        if (job is null)
-            throw new JobNotFoundException(jobId);
 
         return mapper.Map<JobResponse>(job);
     }
