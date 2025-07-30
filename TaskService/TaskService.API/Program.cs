@@ -61,7 +61,7 @@ builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IJobHistoryService, JobHistoryService>();
 builder.Services.AddHttpClient<INotificationClient, NotificationClient>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["Notification:BaseUrl"]);
+    client.BaseAddress = new Uri(builder.Configuration["NotificationService:BaseUrl"]);
 });
 
 
