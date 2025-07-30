@@ -9,6 +9,15 @@ using AuthService.API.Middleware;
 using AuthService.Application.Validators;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
+
+// Serilog
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .Enrich.FromLogContext()
+    .WriteTo.Console() 
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +31,8 @@ builder.Services.AddControllers().AddFluentValidation(c =>
 
 builder.Services.AddEndpointsApiExplorer();
 
+// Serilog
+builder.Host.UseSerilog();
 
 // Database
 builder.Services.AddDbContext<AuthDbContext>(options =>

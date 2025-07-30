@@ -33,13 +33,13 @@ public class ExceptionHandlingMiddleware
         }
         catch (DbUpdateException ex)
         {
-            logger.LogError(ex, "Database update failed");
+            logger.LogError(ex, "Database update failed at {Path}. Exception: {Message}", context.Request.Path, ex.Message);
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             await context.Response.WriteAsJsonAsync(new { error = "Database error" });
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unhandled exception");
+            logger.LogCritical(ex, "Unhandled exception at {Path}. Message: {Message}", context.Request.Path, ex.Message);
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             await context.Response.WriteAsJsonAsync(new { error = "Internal server error" });
         }

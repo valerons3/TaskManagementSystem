@@ -9,7 +9,19 @@ using TaskService.Persistence.DbContexts;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using TaskService.API.Middleware;
+
+
+
+// Serilog
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .Enrich.FromLogContext()
+    .WriteTo.Console() 
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +67,10 @@ builder.Services.AddAuthentication(options =>
             ClockSkew = TimeSpan.Zero
         };
     });
+
+// Serilog
+builder.Host.UseSerilog();
+
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IJobService, JobService>();
