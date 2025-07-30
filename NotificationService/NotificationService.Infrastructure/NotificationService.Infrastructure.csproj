@@ -3,6 +3,11 @@
   <ItemGroup>
     <ProjectReference Include="..\NotificationService.Application\NotificationService.Application.csproj" />
     <ProjectReference Include="..\NotificationService.Persistence\NotificationService.Persistence.csproj" />
+    <ProjectReference Include="..\NotificationService.Hubs\NotificationService.Hubs.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
   </ItemGroup>
 
   <PropertyGroup>

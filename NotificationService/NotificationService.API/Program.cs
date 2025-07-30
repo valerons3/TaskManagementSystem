@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NotificationService.API.Hubs;
 using NotificationService.Application.Interfaces;
+using NotificationService.Infrastructure.Services;
 using NotificationService.Persistence.DbContexts;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,21 +42,13 @@ builder.Services.AddAuthentication(options =>
         {
             OnMessageReceived = context =>
             {
-                if (context.Request.Path.StartsWithSegments("/notifications-hub"))
-                {
-                    var headerToken = context.Request.Headers["Authorization"]
-                        .FirstOrDefault()?
-                        .Replace("Bearer ", "");
-
-                    if (!string.IsNullOrEmpty(headerToken))
-                    {
-                        context.Token = headerToken;
-                        return Task.CompletedTask;
-                    }
-
-                    context.Fail("JWT token must be passed via Authorization header");
-                }
+                var headerToken = context.Request.Headers["Authorization"];
                 
+                if (!string.IsNullOrEmpty(headerToken))
+                {
+                    context.Token = headerToken.ToString().Replace("Bearer ", "");
+                }
+
                 return Task.CompletedTask;
             }
         };
@@ -69,6 +62,7 @@ builder.Services.AddDbContext<NotificationDbContext>(options =>
 
 
 builder.Services.AddScoped<INotificationService, NotificationService.Infrastructure.Services.NotificationService>();
+builder.Services.AddScoped<INotificationHubClient, NotificationHubClient>();
 
 builder.Services.AddCors(options =>
 {

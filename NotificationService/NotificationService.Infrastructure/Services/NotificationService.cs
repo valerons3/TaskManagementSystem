@@ -9,10 +9,12 @@ namespace NotificationService.Infrastructure.Services;
 public class NotificationService : INotificationService
 {
     private readonly NotificationDbContext dbContext;
+    private readonly INotificationHubClient hubClient;
 
-    public NotificationService(NotificationDbContext dbContext)
+    public NotificationService(NotificationDbContext dbContext, INotificationHubClient hubClient)
     {
         this.dbContext = dbContext;
+        this.hubClient = hubClient;
     }
     
     public async Task CreateNotificationAsync(NotificationRequest request)
@@ -29,6 +31,7 @@ public class NotificationService : INotificationService
         
         await dbContext.Notifications.AddAsync(notification);
         await dbContext.SaveChangesAsync();
+        await hubClient.SendNotificationAsync(request);
     }
 
     public async Task<IEnumerable<NotificationResponse>> GetNotificationsByUserIdAsync(Guid userId)

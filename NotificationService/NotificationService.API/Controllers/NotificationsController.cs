@@ -19,7 +19,7 @@ public class NotificationsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] NotificationRequest request)
     {
         await service.CreateNotificationAsync(request);
-        return StatusCode(201); // Created
+        return StatusCode(201); 
     }
 
     [HttpGet("{userId:guid}")]

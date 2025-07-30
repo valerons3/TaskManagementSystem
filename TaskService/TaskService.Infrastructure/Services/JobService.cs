@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TaskService.Application.Contracts.Jobs;
+using TaskService.Application.Contracts.Notifications;
 using TaskService.Application.Exceptions;
 using TaskService.Application.Interfaces;
 using TaskService.Domain.Entities;
@@ -12,11 +13,14 @@ public class JobService : IJobService
 {
     private readonly JobDbContext dbContext;
     private readonly IJobHistoryService jobHistoryService;
+    private readonly INotificationClient notificationClient;
 
-    public JobService(JobDbContext dbContext, IJobHistoryService jobHistoryService)
+    public JobService(JobDbContext dbContext, IJobHistoryService jobHistoryService,
+        INotificationClient notificationClient)
     {
         this.dbContext = dbContext;
         this.jobHistoryService = jobHistoryService;
+        this.notificationClient = notificationClient;
     }
     
     public async Task<JobResponse> CreateJobAsync(CreateJobRequest request, Guid creatorId)
@@ -126,6 +130,13 @@ public class JobService : IJobService
 
         await dbContext.SaveChangesAsync();
         await jobHistoryService.LogHistoryAsync(job.Id, "Job updated", null);
+        if (job.AssigneeId is Guid assigneeId)
+        {
+            await notificationClient.SendNotificationAsync(new NotificationRequest(
+                assigneeId,
+                "Изменение задачи",
+                $"Назначенная вам задача \"{job.Title}\" была изменена"));
+        }
     }
 
     public async Task DeleteJobAsync(Guid jobId, Guid userId)
@@ -139,8 +150,17 @@ public class JobService : IJobService
             throw new ForbiddenAccessException();
         
         job.IsDeleted = true;
+        
         await dbContext.SaveChangesAsync();
         await jobHistoryService.LogHistoryAsync(job.Id, "Job deleted", null);
+        
+        if (job.AssigneeId is Guid assigneeId)
+        {
+            await notificationClient.SendNotificationAsync(new NotificationRequest(
+                assigneeId,
+                "Удалена задача",
+                $"Назначенная вам задача \"{job.Title}\" была удалена"));
+        }
     }
 
     public async Task AssignJobAsync(Guid jobId, Guid assigneeId, Guid userId)
@@ -155,5 +175,8 @@ public class JobService : IJobService
         job.AssigneeId = assigneeId;
         await dbContext.SaveChangesAsync();
         await jobHistoryService.LogHistoryAsync(job.Id, $"Assigned to user {assigneeId}", null);
+        await notificationClient.SendNotificationAsync(new NotificationRequest(assigneeId,
+            "Новая задача",
+            $"Вам назначена новая задача: \"{job.Title}\""));
     }
 }

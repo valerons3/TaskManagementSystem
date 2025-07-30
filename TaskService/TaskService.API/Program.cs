@@ -59,6 +59,10 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IJobHistoryService, JobHistoryService>();
+builder.Services.AddHttpClient<INotificationClient, NotificationClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Notification:BaseUrl"]);
+});
 
 
 var app = builder.Build();
