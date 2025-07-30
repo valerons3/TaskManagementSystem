@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NotificationService.Application.Contracts;
+using NotificationService.Application.Exceptions;
 using NotificationService.Application.Interfaces;
 using NotificationService.Domain.Entities;
 using NotificationService.Persistence.DbContexts;
@@ -53,7 +54,7 @@ public class NotificationService : INotificationService
     {
         Notification? notification = await dbContext.Notifications.FindAsync(id);
         if (notification is null)
-            throw new Exception("Notification not found");
+            throw new NotFoundException($"Notification with id: {id} not found");
 
         notification.IsRead = true;
         await dbContext.SaveChangesAsync();

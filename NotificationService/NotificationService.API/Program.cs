@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NotificationService.API.Hubs;
+using NotificationService.API.Middleware;
 using NotificationService.Application.Interfaces;
 using NotificationService.Infrastructure.Services;
 using NotificationService.Persistence.DbContexts;
@@ -81,6 +82,8 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
