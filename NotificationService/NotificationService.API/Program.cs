@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSignalR();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
@@ -40,19 +41,25 @@ builder.Services.AddAuthentication(options =>
         {
             OnMessageReceived = context =>
             {
-                var accessToken = context.Request.Query["access_token"];
-                var path = context.HttpContext.Request.Path;
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notification-hub"))
+                if (context.Request.Path.StartsWithSegments("/notifications-hub"))
                 {
-                    context.Token = accessToken;
+                    var headerToken = context.Request.Headers["Authorization"]
+                        .FirstOrDefault()?
+                        .Replace("Bearer ", "");
+
+                    if (!string.IsNullOrEmpty(headerToken))
+                    {
+                        context.Token = headerToken;
+                        return Task.CompletedTask;
+                    }
+
+                    context.Fail("JWT token must be passed via Authorization header");
                 }
+                
                 return Task.CompletedTask;
             }
         };
     });
-
-builder.Services.AddSignalR();
-
 
 builder.Services.AddAuthorization();
 
@@ -63,16 +70,27 @@ builder.Services.AddDbContext<NotificationDbContext>(options =>
 
 builder.Services.AddScoped<INotificationService, NotificationService.Infrastructure.Services.NotificationService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .SetIsOriginAllowed(_ => true); 
+    });
+});
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.MapControllers();
 app.MapHub<NotificationHub>("/notifications-hub");
 app.Run();
