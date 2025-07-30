@@ -6,9 +6,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using AuthService.API.Middleware;
+using AuthService.Application.Interfaces.Repositories;
 using AuthService.Application.Validators;
+using AuthService.Persistence.Repositories;
 using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
 // Serilog
@@ -68,6 +69,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService.Infrastructure.Services.AuthService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 var app = builder.Build();
 

@@ -12,6 +12,7 @@ builder.Services.AddHttpClient("proxy")
         .HandleTransientHttpError()
         .CircuitBreakerAsync(3, TimeSpan.FromSeconds(10)));
 
+
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
     .AddTransforms(builderContext => new CustomTransformer());

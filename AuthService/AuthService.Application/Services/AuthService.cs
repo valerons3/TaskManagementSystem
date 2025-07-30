@@ -1,30 +1,27 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using AuthService.Application.Contracts.Auth;
+﻿using AuthService.Application.Contracts.Auth;
 using AuthService.Application.Exceptions;
 using AuthService.Application.Interfaces;
+using AuthService.Application.Interfaces.Repositories;
 using AuthService.Domain.Entities;
-using AuthService.Persistence.DbContexts;
-using Microsoft.EntityFrameworkCore;
 
 namespace AuthService.Infrastructure.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly AuthDbContext dbContext;
+    private readonly IUserRepository userRepository;
     private readonly IJwtTokenGenerator tokenGenerator;
     private readonly IPasswordHasher passwordHasher;
 
-    public AuthService(AuthDbContext dbContext, IJwtTokenGenerator tokenGenerator, IPasswordHasher passwordHasher)
+    public AuthService(IUserRepository userRepository, IJwtTokenGenerator tokenGenerator, IPasswordHasher passwordHasher)
     {
-        this.dbContext = dbContext;
+        this.userRepository = userRepository;
         this.tokenGenerator = tokenGenerator;
         this.passwordHasher = passwordHasher;
     }
     
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
-        var exists = await dbContext.Users.AnyAsync(u => u.Email == request.Email);
+        var exists = await userRepository.ExistsByEmailAsync(request.Email);
         if (exists)
             throw new UserAlreadyExistsException(request.Email);
         
@@ -37,8 +34,7 @@ public class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow
         };
         
-        await dbContext.Users.AddAsync(user);
-        await dbContext.SaveChangesAsync();
+        await userRepository.AddAsync(user);
         
         var token = tokenGenerator.GenerateToken(user);
         return new AuthResponse(user.Id, user.Username, user.Email, token);
@@ -46,7 +42,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        var user = await userRepository.GetByEmailAsync(request.Email);
         if (user is null || !passwordHasher.Verify(request.Password, user.PasswordHash))
             throw new InvalidCredentialsException();
         
