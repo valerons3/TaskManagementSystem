@@ -104,7 +104,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 app.MapControllers();
 app.MapHub<NotificationHub>("/notifications-hub");
 app.Run();

@@ -9,7 +9,8 @@ public class UpdateJobRequestValidator : AbstractValidator<UpdateJobRequest>
     {
         RuleFor(x => x.Title)
             .NotEmpty()
-            .MaximumLength(200);
+            .MaximumLength(200)
+            .When(x => x.Title is not null);
 
         RuleFor(x => x.Description)
             .MaximumLength(1000)

@@ -24,7 +24,6 @@ public class JobRepository : IJobRepository
     public async Task<Job?> GetByIdAsync(Guid jobId)
     {
         return await dbContext.Jobs
-            .AsNoTracking()
             .FirstOrDefaultAsync(j => j.Id == jobId && !j.IsDeleted);
     }
 

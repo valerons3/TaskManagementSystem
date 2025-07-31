@@ -83,8 +83,8 @@ public class JobService : IJobService
         if (job.CreatorId != userId && job.AssigneeId != userId)
             throw new ForbiddenAccessException();
         
-        job.Title = request.Title;
-
+        if (request.Title is not null)
+            job.Title = request.Title;
         if (request.Description is not null)
             job.Description = request.Description;
         if (request.Status is not null)

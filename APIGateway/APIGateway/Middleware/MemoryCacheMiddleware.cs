@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using System.Security.Claims;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace APIGateway.Middleware;
 
@@ -6,6 +7,8 @@ public class MemoryCacheMiddleware
 {
     private readonly RequestDelegate next;
     private readonly IMemoryCache cache;
+
+    private record CachedResponse(string Body, int StatusCode);
 
     public MemoryCacheMiddleware(RequestDelegate next, IMemoryCache cache)
     {
@@ -16,10 +19,10 @@ public class MemoryCacheMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var method = context.Request.Method;
-        var cacheKey = context.Request.Path + context.Request.QueryString;
 
         if (method is "POST" or "PUT" or "DELETE")
         {
+            string cacheKey = BuildCacheKey(context);
             cache.Remove(cacheKey);
             await next(context);
             return;
@@ -31,26 +34,40 @@ public class MemoryCacheMiddleware
             return;
         }
 
-        if (cache.TryGetValue(cacheKey, out string? cachedResponse))
+        string key = BuildCacheKey(context);
+
+        if (cache.TryGetValue(key, out CachedResponse? cached))
         {
+            context.Response.StatusCode = cached.StatusCode;
             context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(cachedResponse);
+            await context.Response.WriteAsync(cached.Body);
             return;
         }
 
-        var originalBodyStream = context.Response.Body;
+        var originalBody = context.Response.Body;
         using var memoryStream = new MemoryStream();
         context.Response.Body = memoryStream;
 
         await next(context);
 
-        memoryStream.Seek(0, SeekOrigin.Begin);
-        var responseText = new StreamReader(memoryStream).ReadToEnd();
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var bodyText = await new StreamReader(context.Response.Body).ReadToEndAsync();
 
-        cache.Set(cacheKey, responseText, TimeSpan.FromSeconds(30)); // можно настроить TTL
+        var statusCode = context.Response.StatusCode;
 
-        memoryStream.Seek(0, SeekOrigin.Begin);
-        await memoryStream.CopyToAsync(originalBodyStream);
-        context.Response.Body = originalBodyStream;
+        if (statusCode == 200)
+        {
+            cache.Set(key, new CachedResponse(bodyText, statusCode), TimeSpan.FromSeconds(30));
+        }
+
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        await context.Response.Body.CopyToAsync(originalBody);
+        context.Response.Body = originalBody;
+    }
+
+    private string BuildCacheKey(HttpContext context)
+    {
+        var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anon";
+        return $"{userId}:{context.Request.Path}{context.Request.QueryString}";
     }
 }
