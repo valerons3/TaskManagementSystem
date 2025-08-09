@@ -7,7 +7,7 @@ public class LoginRequestValidator : AbstractValidator<LoginRequest>
 {
     public LoginRequestValidator()
     {
-        RuleFor(x => x.Email)
+        RuleFor(x => x.Identifier)
             .NotEmpty().WithMessage("Email is required")
             .EmailAddress().WithMessage("Invalid email");
 

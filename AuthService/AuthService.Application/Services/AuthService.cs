@@ -21,7 +21,8 @@ public class AuthService : IAuthService
     
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
-        var exists = await userRepository.ExistsByEmailAsync(request.Email);
+        var exists = await userRepository.ExistsByIdentifierAsync(request.Email, 
+            request.Username);
         if (exists)
             throw new UserAlreadyExistsException(request.Email);
         
@@ -42,7 +43,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        var user = await userRepository.GetByEmailAsync(request.Email);
+        var user = await userRepository.GetByIdentifierAsync(request.Identifier);
         if (user is null || !passwordHasher.Verify(request.Password, user.PasswordHash))
             throw new InvalidCredentialsException();
         

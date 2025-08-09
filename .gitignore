@@ -493,3 +493,4 @@ x64/
 x86/
 build/
 out/
+**/Logs/

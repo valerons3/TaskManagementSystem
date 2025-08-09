@@ -28,7 +28,7 @@ public class AuthServiceTests
     public async Task RegisterAsync_Should_Throw_When_EmailExists()
     {
         var request = new RegisterRequest("existing@mail.com", "password123", "user");
-        userRepoMock.Setup(r => r.ExistsByEmailAsync(request.Email)).ReturnsAsync(true);
+        userRepoMock.Setup(r => r.ExistsByIdentifierAsync(request.Email, request.Username)).ReturnsAsync(true);
 
         Func<Task> act = async () => await authService.RegisterAsync(request);
 
@@ -40,7 +40,7 @@ public class AuthServiceTests
     public async Task LoginAsync_Should_Throw_When_UserNotFound()
     {
         var request = new LoginRequest("notfound@mail.com", "pass");
-        userRepoMock.Setup(r => r.GetByEmailAsync(request.Email)).ReturnsAsync((User?)null);
+        userRepoMock.Setup(r => r.GetByIdentifierAsync(request.Identifier)).ReturnsAsync((User?)null);
 
         Func<Task> act = async () => await authService.LoginAsync(request);
 
@@ -53,7 +53,7 @@ public class AuthServiceTests
         var user = new User { Email = "mail@mail.com", PasswordHash = "hashed" };
         var request = new LoginRequest(user.Email, "wrongpass");
 
-        userRepoMock.Setup(r => r.GetByEmailAsync(user.Email)).ReturnsAsync(user);
+        userRepoMock.Setup(r => r.GetByIdentifierAsync(user.Email)).ReturnsAsync(user);
         passwordHasherMock.Setup(h => h.Verify(request.Password, user.PasswordHash)).Returns(false);
 
         Func<Task> act = async () => await authService.LoginAsync(request);
@@ -67,7 +67,7 @@ public class AuthServiceTests
         var user = new User { Id = Guid.NewGuid(), Username = "User", Email = "mail@mail.com", PasswordHash = "hashed" };
         var request = new LoginRequest(user.Email, "pass");
 
-        userRepoMock.Setup(r => r.GetByEmailAsync(user.Email)).ReturnsAsync(user);
+        userRepoMock.Setup(r => r.GetByIdentifierAsync(user.Email)).ReturnsAsync(user);
         passwordHasherMock.Setup(h => h.Verify(request.Password, user.PasswordHash)).Returns(true);
         tokenGenMock.Setup(t => t.GenerateToken(user)).Returns("valid_token");
 
